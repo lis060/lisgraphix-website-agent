@@ -12,6 +12,8 @@ const LEAD_SELECT =
 export interface LiveData {
   leads: Lead[]; settings: SettingsView; failedRuns: number;
   loading: boolean; error: string | null;
+  /** Attribution or status line for names fetched from Google. */
+  namesNote: string | null;
   reload: () => void;
   setStage: (id: Lead['id'], stage: Stage) => Promise<string | null>;
 }
@@ -23,6 +25,7 @@ export function useLiveData(enabled: boolean): LiveData {
   const [failedRuns, setFailedRuns] = useState(0);
   const [loading, setLoading] = useState(enabled);
   const [error, setError] = useState<string | null>(null);
+  const [namesNote, setNamesNote] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
     if (!enabled || !supabase) return;
@@ -39,12 +42,26 @@ export function useLiveData(enabled: boolean): LiveData {
     } else {
       const mapped = ((b.data ?? []) as unknown as BusinessRow[]).map(mapLead);
       setLeads(mapped);
+      void loadNames(mapped);
       setSettings(mapSettings(s.data ?? [], sch.data ?? [], [...new Set(mapped.map((l) => l.category))].sort()));
       setFailedRuns(runs.count ?? 0);
       setError(null);
     }
     setLoading(false);
   }, [enabled]);
+
+  // Names for Google leads are fetched fresh and kept only in this browser tab.
+  const loadNames = useCallback(async (list: Lead[]) => {
+    if (!supabase) return;
+    const ids = list.filter((l) => l.mapsUrl).slice(0, 50).map((l) => String(l.id));
+    for (let i = 0; i < ids.length; i += 25) {
+      const { data, error } = await supabase.functions.invoke('place-details', { body: { ids: ids.slice(i, i + 25) } });
+      if (error || !data?.places) { setNamesNote('Business names are not available right now. Use the Google Maps links.'); return; }
+      const places = data.places as Record<string, { name: string | null }>;
+      setLeads((ls) => ls.map((l) => (places[String(l.id)]?.name ? { ...l, name: places[String(l.id)]!.name! } : l)));
+    }
+    setNamesNote(ids.length ? 'Business names from Google Maps.' : null);
+  }, []);
 
   useEffect(() => { void reload(); }, [reload]);
 
@@ -56,5 +73,5 @@ export function useLiveData(enabled: boolean): LiveData {
     return null;
   }, []);
 
-  return { leads, settings, failedRuns, loading, error, reload: () => void reload(), setStage };
+  return { leads, settings, failedRuns, loading, error, namesNote, reload: () => void reload(), setStage };
 }

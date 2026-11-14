@@ -7,8 +7,15 @@
     "noUncheckedIndexedAccess": true,
     "noEmit": true,
     "skipLibCheck": true,
-    "types": ["node"],
-    "isolatedModules": true
+    "types": [
+      "node"
+    ],
+    "isolatedModules": true,
+    "allowImportingTsExtensions": true
   },
-  "include": ["src/**/*.ts", "tests/**/*.ts"]
+  "include": [
+    "src/**/*.ts",
+    "tests/**/*.ts",
+    "supabase/functions/**/logic.ts"
+  ]
 }

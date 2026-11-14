@@ -9,7 +9,7 @@ import { mapLead } from '../dashboard/src/mapLead';
 import type { BusinessCandidate } from '../src/domain/types';
 
 const NOW = '2026-11-14T09:30:00Z';
-const STUB = `create role authenticated nologin; create role anon nologin; create schema auth;
+const STUB = `create role authenticated nologin; create role anon nologin; create role service_role nologin; create schema auth;
   create function auth.uid() returns uuid language sql stable as $$ select null::uuid $$;`;
 const MIGRATIONS = readdirSync('supabase/migrations').sort().map((f) => readFileSync(`supabase/migrations/${f}`, 'utf8'));
 

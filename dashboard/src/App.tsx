@@ -28,7 +28,7 @@ function Overview({ leads, failedRuns }: { leads: Lead[]; failedRuns: number }) 
   );
 }
 
-function Leads({ leads }: { leads: Lead[] }) {
+function Leads({ leads, note }: { leads: Lead[]; note?: string | null }) {
   const [q, setQ] = useState('');
   const rows = leads.filter((l) => `${l.name} ${l.category} ${l.city}`.toLowerCase().includes(q.toLowerCase()));
   return (
@@ -37,11 +37,12 @@ function Leads({ leads }: { leads: Lead[] }) {
       <div className="scroll"><table>
         <thead><tr>{['Business','Category','City','Website status','Confidence','Score','Contact','Found','Demo','Stage'].map((h) => <th key={h}>{h}</th>)}</tr></thead>
         <tbody>{rows.map((l) => (
-          <tr key={l.id}><td>{l.mapsUrl ? <a className="link" href={l.mapsUrl} target="_blank" rel="noopener noreferrer">Open in Google Maps</a> : l.name}</td><td>{l.category}</td><td>{l.city}</td><td>{l.websiteStatus}</td>
+          <tr key={l.id}><td>{l.mapsUrl ? <a className="link" href={l.mapsUrl} target="_blank" rel="noopener noreferrer">{l.name === 'Google listing' ? 'Open in Google Maps' : l.name}</a> : l.name}</td><td>{l.category}</td><td>{l.city}</td><td>{l.websiteStatus}</td>
             <td>{dash(l.confidence, '%')}</td><td><b>{dash(l.score)}</b>{l.score !== null && '/100'}</td>
             <td>{l.contact}</td><td>{l.discovered}</td><td>{l.demo}</td><td>{l.stage}</td></tr>
         ))}</tbody>
       </table></div>
+      {note && <p className="muted">{note}</p>}
       {rows.length === 0 && <p className="muted">{leads.length === 0 ? 'No businesses yet. They appear here after the first discovery run.' : 'No leads match.'}</p>}
     </div>
   );
@@ -73,7 +74,7 @@ function Pipeline({ leads, onMove }: { leads: Lead[]; onMove?: (id: Lead['id'], 
       <div className="board">{STAGES.map((s) => (
         <div className="col" key={s}><h4>{s}</h4>
           {leads.filter((l) => l.stage === s).map((l) => (
-            <div className="card mini" key={l.id}>{l.mapsUrl ? `${l.category} (Google listing)` : l.name}<span className="muted"> · {l.city}</span>
+            <div className="card mini" key={l.id}>{l.mapsUrl && l.name === 'Google listing' ? `${l.category} (Google listing)` : l.name}<span className="muted"> · {l.city}</span>
               {onMove && (
                 <select aria-label={`Move ${l.name} to stage`} value={l.stage}
                   onChange={async (e) => setMsg(await onMove(l.id, e.target.value as Stage))}>
@@ -115,7 +116,7 @@ function Shell({ connected, email, signOut }: { connected: boolean; email?: stri
         <h1>{tab}</h1>
         {connected && live.loading ? <p className="muted">Loading…</p> : <>
           {tab === 'Overview' && <Overview leads={leads} failedRuns={connected ? live.failedRuns : 0} />}
-          {tab === 'Leads' && <Leads leads={leads} />}
+          {tab === 'Leads' && <Leads leads={leads} note={connected ? live.namesNote : null} />}
           {tab === 'Demos' && <Demos leads={leads} />}
           {tab === 'Pipeline' && <Pipeline leads={leads} onMove={connected ? live.setStage : undefined} />}
           {tab === 'Settings' && <Settings settings={settings} live={connected} />}
