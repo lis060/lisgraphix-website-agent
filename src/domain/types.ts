@@ -29,6 +29,8 @@ export interface Evidence {
 
 /** A business as found by a discovery source. Missing fields stay undefined. */
 export interface BusinessCandidate {
+  /** Stable id from the source, e.g. a Google place id. */
+  externalId?: string;
   name: string;
   category: string;
   city: string;

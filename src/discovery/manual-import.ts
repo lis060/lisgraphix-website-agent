@@ -82,6 +82,7 @@ export function validateCandidates(raw: unknown, importedAtIso: string): ImportR
       r.operational === true ? true : r.operational === false ? false : null;
 
     valid.push({
+      externalId: cleanText(r.externalId, 200),
       name,
       category,
       city,

@@ -18,13 +18,15 @@ Backend core for the Lisgraphix prospecting workflow: business validation, dupli
 - **Login and access rules** (`dashboard/src/auth.tsx`, `supabase/migrations/20261114010000_auth_policies.sql`): email and password sign-in through Supabase Auth, plus an allowlist. Only accounts linked in `app_users` can read data, and from the browser they can only move client stages, review outreach drafts and change settings. The rules are enforced in the database and tested locally. Sign-in itself has not been tested against a live Supabase project.
 - **Daily report** (`src/reports/daily-report.ts`): builds the report from a run, with a plain-text version for email and a CSV export. Preview links appear only for deployments verified as reachable. CSV cells are quoted and spreadsheet formulas are neutralised.
 - **Outreach drafts** (`src/outreach/draft.ts`): writes a friendly draft per lead for you to review. It never sends anything, and a draft is only marked ready once it holds a verified preview link.
+- **Google Places discovery** (`src/discovery/google-places.ts`): Text Search adapter with a cost-limited field mask, a daily call cap (default 10), retries with backoff, and social links kept separate from websites. `npm run discover` does a live test run that prints a report and writes nothing. Not verified against the live API until a key is added.
+- **Website reachability check** (`src/verification/reachability.ts`): checks that a public web address answers, and refuses private or local addresses.
 - **Settings** (`src/config/config.ts`): defaults from the spec (Accra, Tema, Kumasi; 20 discoveries; 5 shortlisted; 2 demos; 9:30 AM Africa/Accra as cron `30 9 * * *`).
 
 ## Run it
 
 ```bash
 npm install
-npm test            # 89 tests
+npm test            # 100 tests
 npm run typecheck
 npm run run -- path/to/businesses.json
 ```
@@ -35,8 +37,9 @@ The CLI makes no network calls. Without verification facts, every lead is classi
 
 These need your authorization or accounts, and none were created:
 
-- **Business discovery sources.** Google Places needs an API key and billing. Directory sources need terms review.
-- **Live website checks.** Listing, search and HTTP checks need the discovery source above.
+- **Google Places key.** Set `GOOGLE_PLACES_API_KEY` (Places API (New) enabled, billing on). With phone and website fields, searches bill at the Text Search Enterprise rate, which Google lists with 1,000 free calls a month.
+- **Google storage terms (open decision).** Google's Places policies say Places content must not be stored or cached, except the place ID. Saving names, addresses and phone numbers from Google into the database, as the original plan describes, would conflict with that. Nothing from Google is saved yet. See the note at the top of `src/discovery/google-places.ts`.
+- **Web search check.** A listing with no website is never treated as a confirmed gap on its own. A second check through web search is still needed before any lead can be prioritized.
 - **Database connection.** The schema is written but no Supabase project is connected or migrated.
 - **React/Vite demo app and Vercel deployment.** The current templates render static HTML. A React/Vite version and deployment still need building. Vercel paid hosting is not authorized.
 - **Image generation key.** No provider is connected. Until you add `IMAGE_API_KEY`, galleries keep placeholders.
