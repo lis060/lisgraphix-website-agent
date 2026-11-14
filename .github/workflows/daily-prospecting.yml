@@ -1,0 +1,34 @@
+name: Lisgraphix daily prospecting
+on:
+  schedule:
+    - cron: '30 9 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  prospect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm install
+      - run: npm run typecheck
+      - run: npm test
+      - name: Search Google Places and create evidence report
+        env:
+          GOOGLE_PLACES_API_KEY: ${{ secrets.GOOGLE_PLACES_API_KEY }}
+        run: npx tsx src/run-live.ts
+      - name: Save prospect report as workflow artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lisgraphix-prospect-report
+          path: reports/
+          if-no-files-found: warn
+          retention-days: 30
