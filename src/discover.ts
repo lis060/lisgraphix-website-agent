@@ -52,10 +52,13 @@ async function main(): Promise<void> {
 
   const groups: DiscoveredBusiness[][] = [];
   let wrongCategory = 0;
+  const categoryTally = { match: 0, unknown: 0, mismatch: 0 };
   const failures: string[] = [];
   for (const q of buildQueries(settings, Math.floor(now.getTime() / 86_400_000))) {
     try {
-      const { kept, dropped } = dropCategoryMismatches(await source.search(q));
+      const results = await source.search(q);
+      for (const r of results) categoryTally[r.categoryMatch] += 1;
+      const { kept, dropped } = dropCategoryMismatches(results);
       wrongCategory += dropped;
       groups.push(kept);
     } catch (err) {
@@ -85,7 +88,19 @@ async function main(): Promise<void> {
   });
 
   console.log(renderReportText(buildDailyReport(run)));
-  console.log(`\nSkipped as the wrong kind of business: ${wrongCategory}`);
+  // Totals only. No business is named here unless it is a qualified lead above.
+  console.log('\nCategory check on everything Google returned:');
+  console.log(`  fits the category: ${categoryTally.match}, unclear label: ${categoryTally.unknown}, wrong kind (skipped): ${wrongCategory}`);
+  const byStatus = new Map<string, number>();
+  let belowMinimum = 0;
+  for (const lead of run.ranked) {
+    byStatus.set(lead.verification.status, (byStatus.get(lead.verification.status) ?? 0) + 1);
+    if (lead.verification.status === 'no_official_website_identified' && !lead.score.prioritized) belowMinimum += 1;
+  }
+  console.log(`\nChecked in detail: ${run.ranked.length}`);
+  for (const [status, n] of [...byStatus].sort((a, b) => b[1] - a[1])) console.log(`  ${status}: ${n}`);
+  if (belowMinimum) console.log(`  (of those with no website found, ${belowMinimum} scored below the minimum of ${settings.minOpportunityScore})`);
+  if (run.skippedOverDiscoveryLimit) console.log(`Not checked because of the daily limit of ${settings.dailyDiscoveryLimit}: ${run.skippedOverDiscoveryLimit}`);
   console.log(`Google Places calls used: ${source.callsMade()} of ${settings.maxPlacesCallsPerDay}`);
   if (failures.length) console.log(`Search failures:\n- ${failures.join('\n- ')}`);
   if (db && executionId) {
