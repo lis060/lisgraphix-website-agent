@@ -136,3 +136,16 @@ describe('reachability', () => {
     expect((await checkReachable('https://shop.example', { fetchImpl: dead })).reason).toBe('No response.');
   });
 });
+
+describe('interleave', () => {
+  const d = (id: string, name = id) => ({
+    candidate: { externalId: id, name, category: 'c', city: 'Accra', socialUrls: [], sourceUrls: [], operational: null, discoveredAt: NOW },
+    listingFacts: {} as never,
+  });
+  it('takes one from each search in turn and drops repeats', async () => {
+    const { interleave } = await import('../src/discovery/google-places');
+    const out = interleave([[d('a1'), d('a2'), d('a3')], [d('b1'), d('a2')], [], [d('c1')]]);
+    expect(out.map((x) => x.candidate.externalId)).toEqual(['a1', 'b1', 'c1', 'a2', 'a3']);
+    expect(interleave([])).toEqual([]);
+  });
+});

@@ -158,3 +158,25 @@ export function createPlacesSource(opts: PlacesSourceOptions) {
 
   return { search, callsMade: () => calls };
 }
+
+/**
+ * Takes one result from each search in turn, so the daily limit is spread
+ * across categories and cities and does not all go to the first search.
+ * A business returned by more than one search is kept once.
+ */
+export function interleave(groups: DiscoveredBusiness[][]): DiscoveredBusiness[] {
+  const out: DiscoveredBusiness[] = [];
+  const seen = new Set<string>();
+  const longest = Math.max(0, ...groups.map((g) => g.length));
+  for (let i = 0; i < longest; i++) {
+    for (const group of groups) {
+      const d = group[i];
+      if (!d) continue;
+      const key = d.candidate.externalId ?? `${d.candidate.name}|${d.candidate.city}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(d);
+    }
+  }
+  return out;
+}

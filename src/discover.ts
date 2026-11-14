@@ -10,7 +10,7 @@
  * only, with our own status and score.
  */
 import { DEFAULT_SETTINGS } from './config/config';
-import { buildQueries, createPlacesSource, type DiscoveredBusiness } from './discovery/google-places';
+import { buildQueries, createPlacesSource, interleave, type DiscoveredBusiness } from './discovery/google-places';
 import { buildDailyReport, renderReportText } from './reports/daily-report';
 import { checkReachable } from './verification/reachability';
 import { providerFromEnv } from './verification/search-providers';
@@ -50,19 +50,21 @@ async function main(): Promise<void> {
     }
   }
 
-  const found = new Map<string, DiscoveredBusiness>();
+  const groups: DiscoveredBusiness[][] = [];
   const failures: string[] = [];
   for (const q of buildQueries(settings, Math.floor(now.getTime() / 86_400_000))) {
     try {
-      for (const d of await source.search(q)) found.set(`${d.candidate.name}|${d.candidate.city}`, d);
+      groups.push(await source.search(q));
     } catch (err) {
       failures.push(err instanceof Error ? err.message : String(err));
     }
   }
+  // One from each search in turn, so the daily limit covers every category searched.
+  const all = interleave(groups);
+  const found = new Map(all.map((d) => [`${d.candidate.name}|${d.candidate.city}`, d]));
 
   const searchProvider = providerFromEnv(process.env);
   const searchBudget = { remaining: settings.maxSearchCallsPerDay };
-  const all = [...found.values()];
   const run = await runPipeline(all.map((d) => d.candidate), {
     settings, nowIso,
     verify: async (c) => {
