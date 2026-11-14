@@ -15,8 +15,9 @@ export interface LibraryImage {
   template: TemplateId;
   /** Describes the image for screen readers. Required. */
   alt: string;
-  /** Who owns or licensed it. Must be "own" for this library. */
-  license: 'own';
+  /** Who owns or licensed it. "own" = your photo, "ai_generated" = made by the image generator. Manifest files must be "own". */
+  /** "own" = your photo. "ai_generated" = created by the image generator. */
+  license: 'own' | 'ai_generated';
 }
 
 export interface ManifestResult {
@@ -28,6 +29,16 @@ const SAFE_PATH = /^[a-z0-9][a-z0-9_-]*\/[a-z0-9][a-z0-9_.-]*\.(jpg|jpeg|png|web
 const TEMPLATES: TemplateId[] = ['restaurant', 'salon', 'boutique', 'guesthouse', 'generic'];
 
 export const IMAGE_CAPTION = 'Illustrative image, not the business’s own photo.';
+export const AI_IMAGE_CAPTION = 'AI-generated illustration, not the business’s own photo.';
+
+export function captionFor(image: Pick<LibraryImage, 'license'>): string {
+  return image.license === 'ai_generated' ? AI_IMAGE_CAPTION : IMAGE_CAPTION;
+}
+
+/** Folder (under assets/) an image is served from. */
+export function folderFor(image: Pick<LibraryImage, 'license'>): string {
+  return image.license === 'ai_generated' ? 'generated' : 'library';
+}
 
 /** Validates a parsed manifest. Invalid entries are skipped and reported. */
 export function validateManifest(raw: unknown): ManifestResult {

@@ -22,6 +22,11 @@ export interface AutomationSettings {
   /** Cron expression in the schedule timezone. 9:30 AM daily. */
   scheduleCron: string;
   scheduleTimezone: string;
+  /** Where demo images come from. */
+  imageSource: 'generated' | 'library' | 'none';
+  imagesPerSite: number;
+  /** Hard daily cap on generated images, to control cost. */
+  maxGeneratedImagesPerDay: number;
 }
 
 export const DEFAULT_SETTINGS: AutomationSettings = {
@@ -43,6 +48,9 @@ export const DEFAULT_SETTINGS: AutomationSettings = {
   minOpportunityScore: 60,
   scheduleCron: '30 9 * * *',
   scheduleTimezone: 'Africa/Accra',
+  imageSource: 'generated',
+  imagesPerSite: 4,
+  maxGeneratedImagesPerDay: 8,
 };
 
 export function websiteFitFor(settings: AutomationSettings, category: string): number {

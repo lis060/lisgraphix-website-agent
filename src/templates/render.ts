@@ -1,4 +1,4 @@
-import { IMAGE_CAPTION } from '../images/library';
+import { captionFor, folderFor } from '../images/library';
 import type { ListItem, Section, SiteSpec, VerifiedPrice } from './site-spec';
 
 /**
@@ -46,7 +46,7 @@ function renderSection(s: Section): string {
       const figures = s.images
         .map(
           (img) =>
-            `<figure class="photo"><img src="library/${escapeHtml(img.file)}" alt="${escapeHtml(img.alt)}" loading="lazy"><figcaption>${escapeHtml(IMAGE_CAPTION)}</figcaption></figure>`,
+            `<figure class="photo"><img src="${folderFor(img)}/${escapeHtml(img.file)}" alt="${escapeHtml(img.alt)}" loading="lazy"><figcaption>${escapeHtml(captionFor(img))}</figcaption></figure>`,
         )
         .join('');
       const empty = Math.max(0, s.slots - s.images.length);
