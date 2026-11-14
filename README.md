@@ -15,13 +15,14 @@ Backend core for the Lisgraphix prospecting workflow: business validation, dupli
 - **Own image library** (`src/images/library.ts`, `assets/library/`): your photos, one folder per template, listed in a validated manifest. Paths are checked (no traversal or URLs), alt text and an `own` licence are required, and picks are stable per business. Images show with an "illustrative, not the business's own photo" caption. With no images, templates keep placeholders. See `assets/library/README.md`.
 - **AI-generated images** (`src/images/generate.ts`, `resolve.ts`, `openai-generator.ts`): the default image source. Prompts use only fixed generic scenes, never business text, and ask for no text, logos or recognizable people. A daily cap (default 8 images) limits cost, failures fall back to placeholders, and each image is captioned as AI-generated. Switch `imageSource` to `library` or `none` in settings. The OpenAI adapter is untested against the live API and does nothing until `IMAGE_API_KEY` is set.
 - **Database schema** (`supabase/migrations/`): 14 tables for businesses, sources, verification evidence, scores, demos, deployments, schedules, runs, reports, outreach drafts, status history and settings. Tested on a real in-memory Postgres. It enforces no duplicate businesses, one running automation at a time, a "ready" deployment only with a verified URL, no outreach "sent" without approval, and row level security on every table. Not applied to any project, and the seeded schedule starts disabled.
+- **Login and access rules** (`dashboard/src/auth.tsx`, `supabase/migrations/20261114010000_auth_policies.sql`): email and password sign-in through Supabase Auth, plus an allowlist. Only accounts linked in `app_users` can read data, and from the browser they can only move client stages, review outreach drafts and change settings. The rules are enforced in the database and tested locally. Sign-in itself has not been tested against a live Supabase project.
 - **Settings** (`src/config/config.ts`): defaults from the spec (Accra, Tema, Kumasi; 20 discoveries; 5 shortlisted; 2 demos; 9:30 AM Africa/Accra as cron `30 9 * * *`).
 
 ## Run it
 
 ```bash
 npm install
-npm test            # TESTCOUNT tests
+npm test            # 78 tests
 npm run typecheck
 npm run run -- path/to/businesses.json
 ```
@@ -37,9 +38,16 @@ These need your authorization or accounts, and none were created:
 - **Database connection.** The schema is written but no Supabase project is connected or migrated.
 - **React/Vite demo app and Vercel deployment.** The current templates render static HTML. A React/Vite version and deployment still need building. Vercel paid hosting is not authorized.
 - **Image generation key.** No provider is connected. Until you add `IMAGE_API_KEY`, galleries keep placeholders.
-- **Dashboard data and authentication.** A dashboard shell exists in `dashboard/` (run `cd dashboard && npm install && npm run dev`) with sample data only. It has no login, database or live actions yet.
+- **Dashboard live data.** The dashboard in `dashboard/` (run `cd dashboard && npm install && npm run dev`) has a login gate but still shows sample data. With no Supabase values in `dashboard/.env.local` it runs in open sample mode.
 - **Daily scheduler and email report.** The schedule and notification email both need your approval before they run.
 - **Outreach.** Not built on purpose. The spec forbids automatic contact with business owners.
+
+## Connecting login (when you have a Supabase project)
+
+1. Apply both files in `supabase/migrations/` to the project, in order.
+2. In Supabase Auth settings, turn off public sign-ups, then create your own user.
+3. Link that user to the allowlist: `insert into app_users (auth_user_id, email) values ('<your auth user id>', '<your email>');`
+4. Copy `dashboard/.env.example` to `dashboard/.env.local` and fill in the project URL and anon key. Never put the service role key in the dashboard.
 
 ## Configuration
 
