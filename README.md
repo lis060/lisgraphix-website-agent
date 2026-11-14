@@ -36,7 +36,7 @@ These need your authorization or accounts, and none were created:
 - **Database.** Supabase project and schema migrations.
 - **React/Vite demo app and Vercel deployment.** The current templates render static HTML. A React/Vite version and deployment still need building. Vercel paid hosting is not authorized.
 - **Image generation key.** No provider is connected. Until you add `IMAGE_API_KEY`, galleries keep placeholders.
-- **Dashboard and authentication.**
+- **Dashboard data and authentication.** A dashboard shell exists in `dashboard/` (run `cd dashboard && npm install && npm run dev`) with sample data only. It has no login, database or live actions yet.
 - **Daily scheduler and email report.** The schedule and notification email both need your approval before they run.
 - **Outreach.** Not built on purpose. The spec forbids automatic contact with business owners.
 

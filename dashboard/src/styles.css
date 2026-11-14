@@ -1,0 +1,21 @@
+:root{--purple:#2C1250;--orange:#FD6F00;--orange2:#FD853A;--bg:#f6f3f9}
+*{box-sizing:border-box}body{margin:0;font-family:Poppins,system-ui,sans-serif;background:var(--bg);color:#1d1526}
+.shell{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
+aside{background:var(--purple);color:#fff;padding:1.25rem}
+.brand{font-weight:700;font-size:1.25rem;margin-bottom:1.5rem}.brand small{display:block;font-weight:400;font-size:.75rem;color:var(--orange2)}
+nav{display:flex;flex-direction:column;gap:.25rem}
+nav button{background:none;border:0;color:#fff;text-align:left;padding:.6rem .75rem;border-radius:8px;font:inherit;cursor:pointer}
+nav button.on,nav button:hover{background:var(--orange)}
+main{padding:1.5rem;min-width:0}h1{color:var(--purple);margin-top:0}
+.banner{background:#fff3e8;border-left:4px solid var(--orange);padding:.5rem .75rem;border-radius:6px;margin-bottom:1rem;font-size:.85rem}
+.grid{display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.card{background:#fff;border-radius:12px;padding:1rem;box-shadow:0 1px 3px #0001}
+.stat .num{font-size:2rem;font-weight:700;color:var(--purple)}.label,.muted{color:#6b6373;font-size:.85rem}
+.search{width:100%;padding:.6rem;border:1px solid #ddd;border-radius:8px;margin-bottom:.75rem;font:inherit}
+.scroll{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:.85rem}
+th,td{text-align:left;padding:.5rem;border-bottom:1px solid #eee;white-space:nowrap}th{color:var(--purple)}
+.thumb{aspect-ratio:16/9;border-radius:8px;background:linear-gradient(135deg,#e9e1f3,#f7d9c2);margin-bottom:.5rem}
+button:disabled{opacity:.5}.board{display:grid;grid-auto-flow:column;grid-auto-columns:200px;gap:.75rem;overflow-x:auto}
+.col h4{color:var(--purple);margin:.25rem 0}.mini{margin-bottom:.5rem;font-size:.85rem}
+.row{display:grid;grid-template-columns:200px 1fr;gap:.5rem;padding:.5rem 0;border-bottom:1px solid #eee}dt{font-weight:600}dd{margin:0}
+@media(max-width:700px){.shell{grid-template-columns:1fr}aside{padding:.75rem}nav{flex-direction:row;flex-wrap:wrap}.row{grid-template-columns:1fr}}
