@@ -4,8 +4,7 @@ import { discoverPlaces } from './discovery/google-places';
 import { runPipeline } from './workflow/pipeline';
 import type { BusinessCandidate, VerificationInput } from './domain/types';
 
-/** This first live connector checks Google's listing field only. It deliberately
- * does not claim a business has no website without independent verification. */
+/** Listing-only check. Do not claim a missing website without independent checks. */
 function listingFacts(candidate: BusinessCandidate): VerificationInput {
   return {
     listingWebsiteUrl: candidate.websiteUrl,
@@ -19,8 +18,8 @@ function listingFacts(candidate: BusinessCandidate): VerificationInput {
     evidence: [{
       kind: 'manual',
       detail: candidate.websiteUrl
-        ? 'Google Places listing supplies a website URL; ownership and reachability unverified.'
-        : 'Google Places listing contains no official website field; further checks required.',
+        ? 'Listing provides a website; ownership and reachability are unverified.'
+        : 'No website listed by Google Places; an independent search is still needed.',
       sourceUrl: candidate.mapsUrl,
       observedAt: new Date().toISOString(),
     }],
@@ -30,8 +29,8 @@ function listingFacts(candidate: BusinessCandidate): VerificationInput {
 async function main() {
   const apiKey = process.env.GOOGLE_PLACES_API_KEY;
   if (!apiKey) throw new Error('Missing GOOGLE_PLACES_API_KEY (set in GitHub Actions Secrets)');
-  const candidates = await discoverPlaces(apiKey);
-  const report = await runPipeline(candidates, {
+  const discovery = await discoverPlaces(apiKey);
+  const report = await runPipeline(discovery.candidates, {
     settings: DEFAULT_SETTINGS,
     nowIso: new Date().toISOString(),
     verify: listingFacts,
@@ -40,12 +39,18 @@ async function main() {
   const date = new Date().toISOString().slice(0, 10);
   const path = 'reports/prospects-' + date + '.json';
   writeFileSync(path, JSON.stringify({
-    notice: 'Listing-only checks. Website absence is NOT verified. No demos deployed.',
+    notice: 'Listing-only checks. Missing websites are NOT independently verified. No demos deployed.',
     source: 'Google Places API (New)',
+    requestsAttempted: discovery.requestsAttempted,
+    quotaExhausted: discovery.quotaExhausted,
+    warnings: discovery.warnings,
     ...report,
-    candidates,
+    candidates: discovery.candidates,
   }, null, 2));
-  console.log('Wrote ' + path + '; discovered ' + candidates.length + ' businesses.');
-  console.log('Independent web verification and demos are not connected yet.');
+  console.log('Wrote ' + path + '; discovered ' + discovery.candidates.length + ' businesses.');
+  for (const warning of discovery.warnings) console.warn(warning);
+  if (discovery.quotaExhausted) {
+    console.warn('Quota exhausted: report was saved without retrying the API. Fix the limit/billing before expecting real results.');
+  }
 }
 main().catch(error => { console.error(error); process.exitCode = 1; });
