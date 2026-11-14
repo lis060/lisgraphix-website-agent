@@ -32,6 +32,8 @@ export interface PipelineReport {
   skippedOverDiscoveryLimit: number;
   verified: number;
   qualifiedOpportunities: number;
+  /** Every lead that was verified and scored, highest score first. */
+  ranked: RankedLead[];
   shortlisted: RankedLead[];
   demoSelections: RankedLead[];
   failures: PipelineFailure[];
@@ -98,6 +100,7 @@ export async function runPipeline(
     skippedOverDiscoveryLimit: skippedOverLimit,
     verified: ranked.length,
     qualifiedOpportunities: prioritized.length,
+    ranked,
     shortlisted,
     demoSelections,
     failures,

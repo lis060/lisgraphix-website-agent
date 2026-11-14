@@ -2,7 +2,7 @@ import type { Lead, SettingsView, Stage } from './data';
 
 /** Shapes returned by the Supabase queries in live.ts. */
 export interface BusinessRow {
-  id: string; name: string; category: string; city: string;
+  id: string; name: string | null; source?: string; external_id?: string | null; category: string; city: string;
   phone: string | null; email: string | null; discovered_at: string; client_status: string;
   website_verifications: { status: string; confidence: number | string; verified_at: string }[];
   lead_scores: { total: number; scored_at: string }[];
@@ -36,8 +36,14 @@ export function mapLead(row: BusinessRow): Lead {
   // A link is only shown when the database says the URL is real and was reachable.
   const live = dep && dep.status === 'ready' && dep.url_reachable === true && dep.deployment_url;
   const demoUrl = live && /^https:\/\//.test(live) ? live : undefined;
+  // Google leads are stored by place ID only, so there is no saved name.
+  const google = row.source === 'google_places' && !!row.external_id;
+  const mapsUrl = google
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${row.category} ${row.city}`)}&query_place_id=${encodeURIComponent(row.external_id!)}`
+    : undefined;
   return {
-    id: row.id, name: row.name, category: row.category, city: row.city,
+    mapsUrl,
+    id: row.id, name: row.name ?? (google ? 'Google listing' : 'Unnamed'), category: row.category, city: row.city,
     websiteStatus: v ? STATUS_LABEL[v.status] ?? v.status : 'Not verified yet',
     confidence: v ? Math.round(Number(v.confidence) * 100) : null,
     score: s ? s.total : null,

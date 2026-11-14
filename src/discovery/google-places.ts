@@ -13,9 +13,10 @@ import { validateCandidates } from './manual-import';
  * - A daily call budget caps usage. Retries count against it.
  *
  * Storage terms: Google's Places policies do not allow storing or caching
- * Places content, with the place ID as the exception. This adapter returns
- * results in memory only. Decide how to handle storage before saving any of
- * these fields to the database.
+ * Places content, with the place ID as the exception. Results from this
+ * adapter are used in memory during a run. When a run is saved, only the place
+ * ID and our own work are stored (see storage/save-run.ts), and the database
+ * refuses anything else for Google records.
  *
  * Safety: everything Google returns is treated as untrusted text and passes
  * through the same validation as any other import. The API key is only ever
@@ -85,7 +86,8 @@ function toDiscovered(place: RawPlace, q: PlacesQuery, nowIso: string): Discover
     discoveredAt: nowIso, lastVerifiedAt: nowIso,
   }], nowIso);
   const candidate = valid[0];
-  if (!candidate) return null;
+  if (!candidate || !candidate.externalId) return null;
+  candidate.source = 'google_places';
 
   const evidence: Evidence[] = [];
   if (candidate.websiteUrl) {
