@@ -41,8 +41,8 @@ These need your authorization or accounts, and none were created:
 - **React/Vite demo app and Vercel deployment.** The current templates render static HTML. A React/Vite version and deployment still need building. Vercel paid hosting is not authorized.
 - **Image generation key.** No provider is connected. Until you add `IMAGE_API_KEY`, galleries keep placeholders.
 - **Dashboard actions.** When signed in, the dashboard reads real data from Supabase (leads, scores, demos, settings) and can move a client between stages. Editing settings, Run Now, rebuild and archive are not built. With no Supabase values in `dashboard/.env.local` it runs in open sample mode.
-- **Daily scheduler and email report.** The schedule and notification email both need your approval before they run.
-- **Outreach.** Not built on purpose. The spec forbids automatic contact with business owners.
+- **Daily scheduler and email delivery.** The report text is built, but no email provider is connected and the schedule is off. Both need your approval before they run. PDF export is not built.
+- **Sending outreach.** Not built on purpose. Drafts are written for your review, but nothing contacts a business owner automatically.
 
 ## Connecting login (when you have a Supabase project)
 
