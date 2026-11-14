@@ -6,6 +6,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 // reproduces them so the real policy file can be tested locally.
 const SUPABASE_STUB = `
   create role authenticated nologin;
+  create role anon nologin;
   create schema auth;
   create function auth.uid() returns uuid language sql stable as
     $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
@@ -36,6 +37,7 @@ beforeAll(async () => {
   await db.exec(SUPABASE_STUB);
   await db.exec(readFileSync('supabase/migrations/20261114000000_initial_schema.sql', 'utf8'));
   await db.exec(readFileSync('supabase/migrations/20261114010000_auth_policies.sql', 'utf8'));
+  await db.exec(readFileSync('supabase/migrations/20261114020000_harden_functions.sql', 'utf8'));
   await db.exec(GRANTS);
   await db.query(`insert into app_users (auth_user_id, email) values ('${OWNER}', 'owner@example.test')`);
   const r = await db.query<{ id: string }>(
@@ -86,6 +88,12 @@ describe('dashboard access rules', () => {
     await expect(
       as(OWNER, `insert into client_status_history (business_id, to_status) values ('${businessId}', 'Won')`),
     ).rejects.toThrow(/row-level security/);
+  });
+
+  it('leaves no access-check function callable in the public schema', async () => {
+    const r = await db.query(`select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public' and p.proname = 'is_app_user'`);
+    expect(r.rows).toEqual([]);
+    await expect(as(OWNER, 'select public.businesses_before_update()')).rejects.toThrow(/permission denied/);
   });
 
   it('still blocks marking outreach as sent without approval', async () => {
