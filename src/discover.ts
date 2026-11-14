@@ -13,6 +13,8 @@ import { DEFAULT_SETTINGS } from './config/config';
 import { buildQueries, createPlacesSource, type DiscoveredBusiness } from './discovery/google-places';
 import { buildDailyReport, renderReportText } from './reports/daily-report';
 import { checkReachable } from './verification/reachability';
+import { providerFromEnv } from './verification/search-providers';
+import { mergeFacts, searchForWebsite } from './verification/web-search';
 import { runPipeline } from './workflow/pipeline';
 import { connect } from './storage/pg';
 import { RunInProgressError, saveRun, startExecution } from './storage/save-run';
@@ -58,14 +60,22 @@ async function main(): Promise<void> {
     }
   }
 
+  const searchProvider = providerFromEnv(process.env);
+  const searchBudget = { remaining: settings.maxSearchCallsPerDay };
   const all = [...found.values()];
   const run = await runPipeline(all.map((d) => d.candidate), {
     settings, nowIso,
     verify: async (c) => {
       const facts = found.get(`${c.name}|${c.city}`)!.listingFacts;
-      if (!facts.listingWebsiteUrl) return facts;
-      const r = await checkReachable(facts.listingWebsiteUrl);
-      return { ...facts, domainReachable: r.reachable };
+      if (facts.listingWebsiteUrl) {
+        const r = await checkReachable(facts.listingWebsiteUrl);
+        return { ...facts, domainReachable: r.reachable };
+      }
+      if (!searchProvider) return facts;
+      // No website on the listing: run the second check through web search.
+      const merged = mergeFacts(facts, await searchForWebsite(c, searchProvider, searchBudget, nowIso));
+      const site = merged.searchDomains[0];
+      return site ? { ...merged, domainReachable: (await checkReachable(site)).reachable } : merged;
     },
   });
 
@@ -81,7 +91,9 @@ async function main(): Promise<void> {
   } else {
     console.log('\nNothing was saved. Add --save to store this run.');
   }
-  console.log('\nNote: leads are not prioritized from the listing alone. A web search check is still needed.');
+  console.log(searchProvider
+    ? `Web searches used (${searchProvider.name}): ${settings.maxSearchCallsPerDay - searchBudget.remaining} of ${settings.maxSearchCallsPerDay}`
+    : '\nNo web search key is set, so no lead can be prioritized yet. Add BRAVE_SEARCH_API_KEY or SERPER_API_KEY to .env.');
 }
 
 main().catch((err) => { console.error(err instanceof Error ? err.message : err); process.exit(1); });

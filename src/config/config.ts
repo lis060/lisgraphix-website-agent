@@ -30,6 +30,8 @@ export interface AutomationSettings {
   /** Hard daily cap on Google Places searches. 10 a day is about 300 a month,
    *  inside the 1,000 free monthly calls of the SKU this adapter uses. */
   maxPlacesCallsPerDay: number;
+  /** Hard daily cap on web searches used for the second website check. */
+  maxSearchCallsPerDay: number;
 }
 
 export const DEFAULT_SETTINGS: AutomationSettings = {
@@ -55,6 +57,7 @@ export const DEFAULT_SETTINGS: AutomationSettings = {
   imagesPerSite: 4,
   maxGeneratedImagesPerDay: 8,
   maxPlacesCallsPerDay: 10,
+  maxSearchCallsPerDay: 25,
 };
 
 export function websiteFitFor(settings: AutomationSettings, category: string): number {
