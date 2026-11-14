@@ -105,7 +105,7 @@ describe('renderSiteHtml', () => {
   it('loads no external scripts, styles or images', () => {
     expect(html).not.toMatch(/<script/i);
     expect(html).not.toMatch(/<link[^>]+href=["']https?:/i);
-    expect(html).not.toMatch(/<img/i);
+    expect(html).not.toMatch(/<img/i); // no library images supplied here
   });
 
   it('escapes scraped text so it cannot inject markup', () => {

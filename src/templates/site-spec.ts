@@ -1,5 +1,6 @@
 import type { BusinessCandidate } from '../domain/types';
 import { normalizePhone } from '../dedupe/dedupe';
+import { pickImages, type LibraryImage } from '../images/library';
 
 /**
  * Builds a demo website specification for one business.
@@ -31,7 +32,7 @@ export type Section =
   | { kind: 'about'; heading: string; body: string; isPlaceholder: boolean }
   | { kind: 'list'; heading: string; items: ListItem[]; note: string }
   | { kind: 'pricing'; heading: string; items: VerifiedPrice[] }
-  | { kind: 'gallery'; heading: string; slots: number; note: string }
+  | { kind: 'gallery'; heading: string; slots: number; note: string; images: LibraryImage[] }
   | { kind: 'location'; heading: string; address: string | null }
   | { kind: 'enquiry'; heading: string; body: string; ctaLabel: string; whatsappUrl: string | null }
   | { kind: 'contact'; heading: string; phone: string | null; email: string | null; address: string | null };
@@ -48,6 +49,8 @@ export interface SiteSpec {
 export interface SpecOptions {
   /** Only supply prices the business has confirmed. Omitted means no pricing section. */
   verifiedPrices?: VerifiedPrice[];
+  /** Validated images from your own library. Omitted means placeholders only. */
+  library?: LibraryImage[];
 }
 
 export function templateFor(category: string): TemplateId {
@@ -99,6 +102,8 @@ export function buildSiteSpec(candidate: BusinessCandidate, opts: SpecOptions = 
   const whatsappUrl = whatsappUrlFor(candidate.phone);
   const subheadline = `${candidate.category} in ${candidate.city}`;
   const sections: Section[] = [];
+  const gallery = (slots: number) =>
+    pickImages(opts.library ?? [], templateId, slots, candidate.name);
 
   switch (templateId) {
     case 'restaurant':
@@ -111,7 +116,7 @@ export function buildSiteSpec(candidate: BusinessCandidate, opts: SpecOptions = 
           items: [{ title: 'Sample: main dishes' }, { title: 'Sample: drinks' }, { title: 'Sample: desserts' }],
           note: SAMPLE,
         },
-        { kind: 'gallery', heading: 'Food gallery', slots: 6, note: 'Photo placeholders. Use licensed photos only.' },
+        { kind: 'gallery', heading: 'Food gallery', slots: 6, note: 'Photo placeholders. Use licensed photos only.', images: gallery(6) },
         locationSection(candidate),
         { kind: 'enquiry', heading: 'Order or reserve', body: 'Send us a message on WhatsApp.', ctaLabel: 'Chat on WhatsApp', whatsappUrl },
         contactSection(candidate),
@@ -130,7 +135,7 @@ export function buildSiteSpec(candidate: BusinessCandidate, opts: SpecOptions = 
         ...(opts.verifiedPrices && opts.verifiedPrices.length > 0
           ? [{ kind: 'pricing' as const, heading: 'Pricing', items: opts.verifiedPrices }]
           : []),
-        { kind: 'gallery', heading: 'Portfolio', slots: 6, note: 'Photo placeholders. Use licensed photos only.' },
+        { kind: 'gallery', heading: 'Portfolio', slots: 6, note: 'Photo placeholders. Use licensed photos only.', images: gallery(6) },
         aboutSection(candidate),
         { kind: 'enquiry', heading: 'Appointment enquiry', body: 'Tell us the service and the day you prefer.', ctaLabel: 'Send an enquiry', whatsappUrl },
         contactSection(candidate),
@@ -146,7 +151,7 @@ export function buildSiteSpec(candidate: BusinessCandidate, opts: SpecOptions = 
           items: [{ title: 'Sample: new arrivals' }, { title: 'Sample: everyday wear' }],
           note: SAMPLE,
         },
-        { kind: 'gallery', heading: 'Product gallery', slots: 8, note: 'Photo placeholders. Use licensed photos only.' },
+        { kind: 'gallery', heading: 'Product gallery', slots: 8, note: 'Photo placeholders. Use licensed photos only.', images: gallery(8) },
         aboutSection(candidate),
         { kind: 'enquiry', heading: 'WhatsApp shopping enquiry', body: 'Message us about any item you like.', ctaLabel: 'Chat on WhatsApp', whatsappUrl },
         contactSection(candidate),
@@ -168,7 +173,7 @@ export function buildSiteSpec(candidate: BusinessCandidate, opts: SpecOptions = 
           items: [{ title: 'Sample: Wi-Fi' }, { title: 'Sample: parking' }],
           note: SAMPLE,
         },
-        { kind: 'gallery', heading: 'Photo gallery', slots: 6, note: 'Photo placeholders. Use licensed photos only.' },
+        { kind: 'gallery', heading: 'Photo gallery', slots: 6, note: 'Photo placeholders. Use licensed photos only.', images: gallery(6) },
         locationSection(candidate),
         { kind: 'enquiry', heading: 'Booking enquiry', body: 'Ask us about availability for your dates.', ctaLabel: 'Send an enquiry', whatsappUrl },
         contactSection(candidate),
