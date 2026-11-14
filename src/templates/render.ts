@@ -1,5 +1,6 @@
 import { captionFor, folderFor } from '../images/library';
 import type { ListItem, Section, SiteSpec, VerifiedPrice } from './site-spec';
+import { themeLayout, themeVars } from './themes';
 
 /**
  * Renders a SiteSpec to one self-contained HTML page.
@@ -74,27 +75,26 @@ function renderSection(s: Section): string {
   }
 }
 
-const STYLE = `
-:root{--purple:#2C1250;--orange:#FD6F00;--orange2:#FD853A;--ink:#1d1526;--paper:#fbf9f7}
-*{box-sizing:border-box}body{margin:0;font-family:Poppins,system-ui,sans-serif;color:var(--ink);background:var(--paper);line-height:1.6}
-.notice{background:var(--purple);color:#fff;text-align:center;font-size:.85rem;padding:.5rem 1rem}
-.hero{background:var(--purple);color:#fff;padding:5rem 1.5rem;text-align:center;max-width:none}
-.hero h1{font-size:clamp(2rem,5vw,3.25rem);margin:.25rem 0 1.25rem}
-.eyebrow{text-transform:uppercase;letter-spacing:.12em;font-size:.8rem;color:var(--orange2);margin:0}
+const BASE_STYLE = `
+*{box-sizing:border-box}body{margin:0;font-family:Poppins,system-ui,-apple-system,'Segoe UI',sans-serif;color:var(--ink);background:var(--paper);line-height:1.6}
+.notice{background:#2C1250;color:#fff;text-align:center;font-size:.85rem;padding:.5rem 1rem}
+.hero{background:var(--hero);color:var(--on-hero);padding:5rem 1.5rem;text-align:center;max-width:none}
+.hero h1{font-family:var(--heading-font);font-size:clamp(2rem,5vw,3.25rem);margin:.25rem 0 1.25rem;line-height:1.15}
+.eyebrow{text-transform:uppercase;letter-spacing:.12em;font-size:.8rem;color:var(--eyebrow);margin:0}
 section{max-width:960px;margin:0 auto;padding:3rem 1.5rem}
-h2{color:var(--purple);font-size:1.6rem;margin-bottom:.75rem}
-.cta{display:inline-block;background:var(--orange);color:#fff;text-decoration:none;padding:.75rem 1.5rem;border-radius:999px;font-weight:600}
+h2{font-family:var(--heading-font);color:var(--heading);font-size:1.6rem;margin-bottom:.75rem}
+.cta{display:inline-block;background:var(--accent);color:var(--on-accent);text-decoration:none;padding:.75rem 1.5rem;border-radius:999px;font-weight:600}
 .cards{list-style:none;padding:0;display:grid;gap:.75rem;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
-.cards li{background:#fff;border-left:4px solid var(--orange);padding:1rem;border-radius:8px}
-.item-detail{color:#6b6373;font-size:.9rem}
+.cards li{background:var(--card);border-left:4px solid var(--edge);padding:1rem;border-radius:8px}
+.item-detail{color:var(--muted);font-size:.9rem}
 .gallery{display:grid;gap:.75rem;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
-.photo{margin:0}.photo img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:10px;display:block}.photo figcaption{font-size:.75rem;color:#6b6373;margin-top:.25rem}
-.slot{aspect-ratio:4/3;background:linear-gradient(135deg,#e9e1f3,#f7d9c2);border-radius:10px}
-.prices{width:100%;border-collapse:collapse}.prices td{padding:.6rem;border-bottom:1px solid #e6e0ea}
+.photo{margin:0}.photo img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:10px;display:block}.photo figcaption{font-size:.75rem;color:var(--muted);margin-top:.25rem}
+.slot{aspect-ratio:4/3;background:var(--slot);border-radius:10px}
+.prices{width:100%;border-collapse:collapse}.prices td{padding:.6rem;border-bottom:1px solid var(--edge)}
 .placeholder{color:#8a6d00;font-style:italic}
-.note{color:#6b6373;font-size:.85rem}
+.note{color:var(--muted);font-size:.85rem}
 .contact{list-style:none;padding:0}
-footer{text-align:center;color:#6b6373;font-size:.8rem;padding:2rem}
+footer{text-align:center;color:var(--muted);font-size:.8rem;padding:2rem}
 `;
 
 export function renderSiteHtml(spec: SiteSpec): string {
@@ -108,7 +108,7 @@ export function renderSiteHtml(spec: SiteSpec): string {
 <meta name="robots" content="noindex, nofollow">
 <title>${escapeHtml(title)}</title>
 <meta name="description" content="${escapeHtml(`Demonstration website concept for ${spec.businessName}, ${spec.city}.`)}">
-<style>${STYLE}</style>
+<style>${themeVars(spec.templateId)}${BASE_STYLE}${themeLayout(spec.templateId)}</style>
 </head>
 <body>
 <div class="notice" role="note">${escapeHtml(spec.notice)}</div>

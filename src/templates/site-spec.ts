@@ -116,7 +116,7 @@ export function buildSiteSpec(candidate: BusinessCandidate, opts: SpecOptions = 
           items: [{ title: 'Sample: main dishes' }, { title: 'Sample: drinks' }, { title: 'Sample: desserts' }],
           note: SAMPLE,
         },
-        { kind: 'gallery', heading: 'Food gallery', slots: 6, note: 'Photo placeholders. Use licensed photos only.', images: gallery(6) },
+        { kind: 'gallery', heading: 'Food gallery', slots: 5, note: 'Photo placeholders. Use licensed photos only.', images: gallery(5) },
         locationSection(candidate),
         { kind: 'enquiry', heading: 'Order or reserve', body: 'Send us a message on WhatsApp.', ctaLabel: 'Chat on WhatsApp', whatsappUrl },
         contactSection(candidate),
