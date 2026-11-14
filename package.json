@@ -9,7 +9,8 @@
     "test": "vitest run",
     "run": "tsx src/index.ts",
     "discover": "tsx src/discover.ts",
-    "demo:samples": "tsx src/demo-samples.ts"
+    "demo:samples": "tsx src/demo-samples.ts",
+    "image:try": "tsx src/image-try.ts"
   },
   "engines": {
     "node": ">=20"
