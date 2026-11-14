@@ -78,7 +78,7 @@ const STYLE = `
 :root{--purple:#2C1250;--orange:#FD6F00;--orange2:#FD853A;--ink:#1d1526;--paper:#fbf9f7}
 *{box-sizing:border-box}body{margin:0;font-family:Poppins,system-ui,sans-serif;color:var(--ink);background:var(--paper);line-height:1.6}
 .notice{background:var(--purple);color:#fff;text-align:center;font-size:.85rem;padding:.5rem 1rem}
-.hero{background:var(--purple);color:#fff;padding:5rem 1.5rem;text-align:center}
+.hero{background:var(--purple);color:#fff;padding:5rem 1.5rem;text-align:center;max-width:none}
 .hero h1{font-size:clamp(2rem,5vw,3.25rem);margin:.25rem 0 1.25rem}
 .eyebrow{text-transform:uppercase;letter-spacing:.12em;font-size:.8rem;color:var(--orange2);margin:0}
 section{max-width:960px;margin:0 auto;padding:3rem 1.5rem}

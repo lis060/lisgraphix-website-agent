@@ -22,13 +22,14 @@ Backend core for the Lisgraphix prospecting workflow: business validation, dupli
 - **Website reachability check** (`src/verification/reachability.ts`): checks that a public web address answers, and refuses private or local addresses.
 - **Saving runs** (`src/storage/save-run.ts`): `npm run discover -- --save` stores a run in Supabase. Businesses found through Google are stored by place ID only, with the category and city searched, our website status, score and reasons. Google's name, address, phone, website and links are never written, and a database constraint refuses them. Only one run can be in progress; a crashed run is closed after two hours. Needs `DATABASE_URL`. Not verified against the live database.
 - **Web search check** (`src/verification/web-search.ts`, `search-providers.ts`): searches for each business that has no website on its listing, ignores directories and social pages, and looks for a site of its own. A domain matching the business name counts as its website; a weaker match goes to manual review. With the listing check and this one both clean, a lead reaches "no official website identified" at 75% confidence and can be prioritized. Capped at 25 searches a day. Works with Brave or Serper; neither adapter has run against the live service.
+- **Demo builder** (`src/demo/build.ts`): builds one demo page and runs ten checks before it may be published: unofficial notice, hidden from search engines, no scripts, no outside files, safe links only, one main heading, mobile ready, images described, no invented reviews, small page size. `npm run demo:samples` writes one sample per template to `demo-output/` using fictional businesses.
 - **Settings** (`src/config/config.ts`): defaults from the spec (Accra, Tema, Kumasi; 20 discoveries; 5 shortlisted; 2 demos; 9:30 AM Africa/Accra as cron `30 9 * * *`).
 
 ## Run it
 
 ```bash
 npm install
-npm test            # 124 tests
+npm test            # 132 tests
 npm run typecheck
 npm run run -- path/to/businesses.json
 ```
