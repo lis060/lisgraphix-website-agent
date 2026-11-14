@@ -16,13 +16,15 @@ Backend core for the Lisgraphix prospecting workflow: business validation, dupli
 - **AI-generated images** (`src/images/generate.ts`, `resolve.ts`, `openai-generator.ts`): the default image source. Prompts use only fixed generic scenes, never business text, and ask for no text, logos or recognizable people. A daily cap (default 8 images) limits cost, failures fall back to placeholders, and each image is captioned as AI-generated. Switch `imageSource` to `library` or `none` in settings. The OpenAI adapter is untested against the live API and does nothing until `IMAGE_API_KEY` is set.
 - **Database schema** (`supabase/migrations/`): 14 tables for businesses, sources, verification evidence, scores, demos, deployments, schedules, runs, reports, outreach drafts, status history and settings. Tested on a real in-memory Postgres. It enforces no duplicate businesses, one running automation at a time, a "ready" deployment only with a verified URL, no outreach "sent" without approval, and row level security on every table. Not applied to any project, and the seeded schedule starts disabled.
 - **Login and access rules** (`dashboard/src/auth.tsx`, `supabase/migrations/20261114010000_auth_policies.sql`): email and password sign-in through Supabase Auth, plus an allowlist. Only accounts linked in `app_users` can read data, and from the browser they can only move client stages, review outreach drafts and change settings. The rules are enforced in the database and tested locally. Sign-in itself has not been tested against a live Supabase project.
+- **Daily report** (`src/reports/daily-report.ts`): builds the report from a run, with a plain-text version for email and a CSV export. Preview links appear only for deployments verified as reachable. CSV cells are quoted and spreadsheet formulas are neutralised.
+- **Outreach drafts** (`src/outreach/draft.ts`): writes a friendly draft per lead for you to review. It never sends anything, and a draft is only marked ready once it holds a verified preview link.
 - **Settings** (`src/config/config.ts`): defaults from the spec (Accra, Tema, Kumasi; 20 discoveries; 5 shortlisted; 2 demos; 9:30 AM Africa/Accra as cron `30 9 * * *`).
 
 ## Run it
 
 ```bash
 npm install
-npm test            # 83 tests
+npm test            # 89 tests
 npm run typecheck
 npm run run -- path/to/businesses.json
 ```
