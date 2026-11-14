@@ -1,6 +1,7 @@
 import type {
   BusinessCandidate,
   LeadScore,
+  LeadSignals,
   ScoreFactor,
   VerificationResult,
 } from '../domain/types';
@@ -11,6 +12,8 @@ export interface ScoreContext {
   /** "Now" as ISO string, injected so tests are deterministic. */
   nowIso: string;
   minOpportunityScore: number;
+  /** Signals gathered during the run. Missing signals get a neutral middle value. */
+  signals?: LeadSignals;
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -43,75 +46,67 @@ function websiteGapFactor(v: VerificationResult): ScoreFactor {
   return { label: 'Website gap', points, maxPoints, reason };
 }
 
-function infoQualityFactor(c: BusinessCandidate): ScoreFactor {
-  const fields = [c.name, c.category, c.city, c.address, c.description];
-  const filled = fields.filter((f) => f && f.trim().length > 0).length;
-  const points = Math.round((filled / fields.length) * 15);
-  return {
-    label: 'Information quality',
-    points,
-    maxPoints: 15,
-    reason: `${filled} of ${fields.length} key details present (name, category, city, address, description).`,
-  };
+function activityFactor(signals: LeadSignals | undefined): ScoreFactor {
+  const maxPoints = 12;
+  const n = signals?.ratingCount;
+  // Reasons use bands, not exact numbers, so no figure from a listing is stored.
+  if (n === undefined) return { label: 'Customer activity', points: 6, maxPoints, reason: 'Customer activity not known.' };
+  if (n >= 50) return { label: 'Customer activity', points: 12, maxPoints, reason: 'Many customers have rated the business, so it is busy.' };
+  if (n >= 10) return { label: 'Customer activity', points: 9, maxPoints, reason: 'A fair number of customers have rated the business.' };
+  if (n >= 1) return { label: 'Customer activity', points: 5, maxPoints, reason: 'A few customers have rated the business.' };
+  return { label: 'Customer activity', points: 2, maxPoints, reason: 'No customer ratings yet, so activity is unclear.' };
+}
+
+function onlinePresenceFactor(c: BusinessCandidate, signals: LeadSignals | undefined): ScoreFactor {
+  const maxPoints = 10;
+  const known = signals?.socialPagesFound !== undefined || c.socialUrls.length > 0;
+  const pages = (signals?.socialPagesFound ?? 0) + c.socialUrls.length;
+  if (!known) return { label: 'Online presence', points: 5, maxPoints, reason: 'Social media presence not checked.' };
+  if (pages > 0) return { label: 'Online presence', points: 10, maxPoints, reason: 'Already promotes itself on social media, but has no website of its own.' };
+  return { label: 'Online presence', points: 3, maxPoints, reason: 'No social media pages found.' };
+}
+
+function categoryFactor(signals: LeadSignals | undefined): ScoreFactor {
+  const maxPoints = 5;
+  if (signals?.categoryMatch === 'match') return { label: 'Category certainty', points: 5, maxPoints, reason: 'The listing type fits the category searched.' };
+  if (signals?.categoryMatch === 'mismatch') return { label: 'Category certainty', points: 0, maxPoints, reason: 'The listing type does not fit the category.' };
+  return { label: 'Category certainty', points: 3, maxPoints, reason: 'The listing type is unclear.' };
 }
 
 function activeFactor(c: BusinessCandidate): ScoreFactor {
-  if (c.operational === true) {
-    return { label: 'Active business', points: 10, maxPoints: 10, reason: 'Source shows the business operating.' };
-  }
-  if (c.operational === null) {
-    return { label: 'Active business', points: 4, maxPoints: 10, reason: 'Operating status unknown.' };
-  }
-  return { label: 'Active business', points: 0, maxPoints: 10, reason: 'Source shows the business closed.' };
+  const maxPoints = 5;
+  if (c.operational === true) return { label: 'Active business', points: 5, maxPoints, reason: 'Source shows the business operating.' };
+  if (c.operational === null) return { label: 'Active business', points: 2, maxPoints, reason: 'Operating status unknown.' };
+  return { label: 'Active business', points: 0, maxPoints, reason: 'Source shows the business closed.' };
 }
 
 function websiteValueFactor(websiteFit: number): ScoreFactor {
-  return {
-    label: 'Website value',
-    points: websiteFit,
-    maxPoints: 15,
-    reason: 'Category fit for a simple showcase website.',
-  };
+  return { label: 'Website value', points: Math.max(0, Math.min(15, websiteFit)), maxPoints: 15, reason: 'Category fit for a simple showcase website.' };
 }
 
 function contactFactor(c: BusinessCandidate): ScoreFactor {
   const phone = c.phone && c.phone.trim() ? 6 : 0;
-  const email = c.email && c.email.trim() ? 4 : 0;
+  const email = c.email && c.email.trim() ? 2 : 0;
   const parts = [phone && 'phone', email && 'email'].filter(Boolean);
   return {
-    label: 'Public contact',
-    points: phone + email,
-    maxPoints: 10,
+    label: 'Public contact', points: phone + email, maxPoints: 8,
     reason: parts.length ? `Public ${parts.join(' and ')} available.` : 'No public contact details found.',
   };
 }
 
-function demoSuitabilityFactor(c: BusinessCandidate): ScoreFactor {
-  const hasDescription = !!c.description && c.description.trim().length >= 20;
+function demoInfoFactor(c: BusinessCandidate): ScoreFactor {
   const hasAddress = !!c.address && c.address.trim().length > 0;
-  const points = (hasDescription ? 5 : 0) + (hasAddress ? 5 : 0);
+  const hasDescription = !!c.description && c.description.trim().length >= 20;
   return {
-    label: 'Demo suitability',
-    points,
-    maxPoints: 10,
-    reason: `${hasDescription ? 'Has a usable description' : 'No usable description'}; ${
-      hasAddress ? 'has an address' : 'no address'
-    }.`,
+    label: 'Information for a demo', points: (hasAddress ? 3 : 0) + (hasDescription ? 2 : 0), maxPoints: 5,
+    reason: `${hasAddress ? 'Has an address' : 'No address'}; ${hasDescription ? 'has a usable description' : 'no description'}.`,
   };
 }
 
 function freshnessFactor(c: BusinessCandidate, nowIso: string): ScoreFactor {
-  const reference = c.lastVerifiedAt ?? c.discoveredAt;
-  const age = daysBetween(reference, nowIso);
-  let points = 0;
-  if (age <= 30) points = 5;
-  else if (age <= 90) points = 3;
-  return {
-    label: 'Freshness',
-    points,
-    maxPoints: 5,
-    reason: `Information is ${Math.max(0, Math.floor(age))} days old.`,
-  };
+  const age = daysBetween(c.lastVerifiedAt ?? c.discoveredAt, nowIso);
+  const points = age <= 30 ? 5 : age <= 90 ? 3 : 0;
+  return { label: 'Freshness', points, maxPoints: 5, reason: `Information is ${Math.max(0, Math.floor(age))} days old.` };
 }
 
 function recommendation(c: BusinessCandidate, v: VerificationResult): string {
@@ -126,7 +121,10 @@ function recommendation(c: BusinessCandidate, v: VerificationResult): string {
 
 /**
  * Explainable 0 to 100 opportunity score. Each factor is listed with its
- * points and reason so the score can be audited.
+ * points and reason so the score can be audited. The nine factors add up to
+ * exactly 100: website gap 35, customer activity 12, online presence 10,
+ * category certainty 5, website value 15, public contact 8, information for a
+ * demo 5, active business 5, freshness 5.
  *
  * The score does not estimate revenue or ability to pay.
  */
@@ -137,11 +135,13 @@ export function scoreLead(
 ): LeadScore {
   const factors: ScoreFactor[] = [
     websiteGapFactor(verification),
-    infoQualityFactor(candidate),
-    activeFactor(candidate),
+    activityFactor(ctx.signals),
+    onlinePresenceFactor(candidate, ctx.signals),
+    categoryFactor(ctx.signals),
     websiteValueFactor(ctx.websiteFit),
     contactFactor(candidate),
-    demoSuitabilityFactor(candidate),
+    demoInfoFactor(candidate),
+    activeFactor(candidate),
     freshnessFactor(candidate, ctx.nowIso),
   ];
   const total = Math.min(100, factors.reduce((sum, f) => sum + f.points, 0));

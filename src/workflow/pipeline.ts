@@ -74,6 +74,7 @@ export async function runPipeline(
         websiteFit: websiteFitFor(settings, candidate.category),
         nowIso,
         minOpportunityScore: settings.minOpportunityScore,
+        signals: { ...candidate.signals, socialPagesFound: facts.socialPagesFound ?? candidate.signals?.socialPagesFound },
       });
       ranked.push({ candidate, verification, score });
     } catch (err) {

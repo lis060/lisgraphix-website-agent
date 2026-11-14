@@ -59,6 +59,8 @@ export interface SearchFacts {
   searchDomains: string[];
   domainBelongsToBusiness: boolean | null;
   evidence: Evidence[];
+  /** Social media pages seen in the results. Undefined when no search ran. */
+  socialPagesFound?: number;
 }
 
 export async function searchForWebsite(
@@ -110,6 +112,7 @@ export async function searchForWebsite(
     searchDomains: found ? [found] : [],
     domainBelongsToBusiness: strong ? true : null,
     evidence,
+    socialPagesFound: social,
   };
 }
 
@@ -121,5 +124,6 @@ export function mergeFacts(listing: VerificationInput, search: SearchFacts): Ver
     searchDomains: [...listing.searchDomains, ...search.searchDomains],
     domainBelongsToBusiness: listing.listingWebsiteUrl ? listing.domainBelongsToBusiness : search.domainBelongsToBusiness,
     evidence: [...listing.evidence, ...search.evidence],
+    socialPagesFound: search.socialPagesFound,
   };
 }

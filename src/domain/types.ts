@@ -48,6 +48,20 @@ export interface BusinessCandidate {
   sourceUrls: string[];
   discoveredAt: string; // ISO 8601
   lastVerifiedAt?: string; // ISO 8601
+  /**
+   * Extra signals used for scoring during a run. Held in memory only and
+   * never written to the database.
+   */
+  signals?: LeadSignals;
+}
+
+export interface LeadSignals {
+  /** How many customer ratings the listing has. A sign of how busy the business is. */
+  ratingCount?: number;
+  /** Whether the listing's type fits the category we searched for. */
+  categoryMatch?: 'match' | 'unknown' | 'mismatch';
+  /** Social media pages seen for the business (listing link or web search). */
+  socialPagesFound?: number;
 }
 
 /** What the verification step found. Each field is a fact, not a guess. */
@@ -70,6 +84,8 @@ export interface VerificationInput {
   domainReachable: boolean | null;
   /** Source URLs and short notes that support the findings. */
   evidence: Evidence[];
+  /** Social media pages the web search turned up. Undefined when no search ran. */
+  socialPagesFound?: number;
 }
 
 export interface VerificationResult {

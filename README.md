@@ -9,7 +9,7 @@ Backend core for the Lisgraphix prospecting workflow: business validation, dupli
 - **Input validation** (`src/discovery/manual-import.ts`): accepts a JSON array of businesses, rejects incomplete records, strips control characters, and never fills in missing details.
 - **Duplicate prevention** (`src/dedupe/dedupe.ts`): matches the same normalized name in the same city as a duplicate. A shared phone number alone is flagged for review, not dropped, because businesses often share a line.
 - **Website-absence verification** (`src/verification/website-status.ts`): classifies a business as one of six statuses from recorded facts. "No website identified" is capped at 85% confidence and is never presented as proof.
-- **Lead scoring** (`src/scoring/score.ts`): 0 to 100, with seven factors that each show points and a reason. A lead is only prioritized when it has a clear website gap at 60% confidence or higher and meets the minimum score. The score does not estimate revenue.
+- **Lead scoring** (`src/scoring/score.ts`): 0 to 100 from nine factors that each show points and a reason: website gap 35, customer activity 12, online presence 10, category certainty 5, website value 15, public contact 8, information for a demo 5, active business 5, freshness 5. Customer activity uses how many ratings a listing has, and online presence uses social pages found. Both are used in memory during a run and described in bands, so no figure from a listing is stored. A lead is only prioritized when it has a clear website gap at 60% confidence or higher and meets the minimum score. The score does not estimate revenue.
 - **Pipeline** (`src/workflow/pipeline.ts`): dedupe, category and city filters, daily discovery limit, verification with per-lead failure recording, ranking, shortlist, and demo selection limits.
 - **Demo templates** (`src/templates/`): one specification per business, with restaurant, salon/barbershop, boutique, guesthouse and generic templates. Only verified facts appear as facts. Unknown details become labelled placeholders or are left out. Sample lists are marked as demonstration content, and pricing appears only when verified. The page renders to one self-contained HTML file with the unofficial notice, `noindex`, no external scripts or images, and escaped text.
 - **Own image library** (`src/images/library.ts`, `assets/library/`): your photos, one folder per template, listed in a validated manifest. Paths are checked (no traversal or URLs), alt text and an `own` licence are required, and picks are stable per business. Images show with an "illustrative, not the business's own photo" caption. With no images, templates keep placeholders. See `assets/library/README.md`.
@@ -30,7 +30,7 @@ Backend core for the Lisgraphix prospecting workflow: business validation, dupli
 
 ```bash
 npm install
-npm test            # 139 tests
+npm test            # 142 tests
 npm run typecheck
 npm run run -- path/to/businesses.json
 ```
