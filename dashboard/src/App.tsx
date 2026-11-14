@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { AuthGate } from './auth';
 import { LEADS, SETTINGS, STAGES, type Lead } from './data';
 
 type Tab = 'Overview' | 'Leads' | 'Demos' | 'Pipeline' | 'Settings';
@@ -82,15 +83,23 @@ function Settings() {
 export function App() {
   const [tab, setTab] = useState<Tab>('Overview');
   return (
-    <div className="shell">
-      <aside><div className="brand">Lisgraphix<small>The Brand Builders</small></div>
-        <nav>{TABS.map((t) => <button key={t} className={t === tab ? 'on' : ''} onClick={() => setTab(t)}>{t}</button>)}</nav></aside>
-      <main>
-        <div className="banner" role="note">Sample data only. Nothing here is a real business.</div>
-        <h1>{tab}</h1>
-        {tab === 'Overview' && <Overview />}{tab === 'Leads' && <Leads />}{tab === 'Demos' && <Demos />}
-        {tab === 'Pipeline' && <Pipeline />}{tab === 'Settings' && <Settings />}
-      </main>
-    </div>
+    <AuthGate>{({ connected, email, signOut }) => (
+      <div className="shell">
+        <aside><div className="brand">Lisgraphix<small>The Brand Builders</small></div>
+          <nav>{TABS.map((t) => <button key={t} className={t === tab ? 'on' : ''} onClick={() => setTab(t)}>{t}</button>)}</nav>
+          {connected && <div className="who"><span>{email}</span><button onClick={signOut}>Sign out</button></div>}
+        </aside>
+        <main>
+          <div className="banner" role="note">
+            {connected
+              ? 'Signed in. The screens still show sample data until live data is wired up.'
+              : 'Login is not connected. Sample data only. Nothing here is a real business.'}
+          </div>
+          <h1>{tab}</h1>
+          {tab === 'Overview' && <Overview />}{tab === 'Leads' && <Leads />}{tab === 'Demos' && <Demos />}
+          {tab === 'Pipeline' && <Pipeline />}{tab === 'Settings' && <Settings />}
+        </main>
+      </div>
+    )}</AuthGate>
   );
 }
