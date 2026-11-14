@@ -1,3 +1,4 @@
+import { captionFor, folderFor } from '../images/library';
 import type { ListItem, Section, SiteSpec, VerifiedPrice } from './site-spec';
 
 /**
@@ -42,8 +43,16 @@ function renderSection(s: Section): string {
     case 'pricing':
       return `<section><h2>${escapeHtml(s.heading)}</h2><table class="prices"><tbody>${renderPricing(s.items)}</tbody></table></section>`;
     case 'gallery': {
-      const slots = Array.from({ length: s.slots }, (_, i) => `<div class="slot" aria-label="Photo placeholder ${i + 1}"></div>`).join('');
-      return `<section><h2>${escapeHtml(s.heading)}</h2><div class="gallery">${slots}</div><p class="note">${escapeHtml(s.note)}</p></section>`;
+      const figures = s.images
+        .map(
+          (img) =>
+            `<figure class="photo"><img src="${folderFor(img)}/${escapeHtml(img.file)}" alt="${escapeHtml(img.alt)}" loading="lazy"><figcaption>${escapeHtml(captionFor(img))}</figcaption></figure>`,
+        )
+        .join('');
+      const empty = Math.max(0, s.slots - s.images.length);
+      const slots = Array.from({ length: empty }, (_, i) => `<div class="slot" aria-label="Photo placeholder ${i + 1}"></div>`).join('');
+      const note = s.images.length > 0 ? '' : `<p class="note">${escapeHtml(s.note)}</p>`;
+      return `<section><h2>${escapeHtml(s.heading)}</h2><div class="gallery">${figures}${slots}</div>${note}</section>`;
     }
     case 'location':
       return `<section><h2>${escapeHtml(s.heading)}</h2><p>${
@@ -79,6 +88,7 @@ h2{color:var(--purple);font-size:1.6rem;margin-bottom:.75rem}
 .cards li{background:#fff;border-left:4px solid var(--orange);padding:1rem;border-radius:8px}
 .item-detail{color:#6b6373;font-size:.9rem}
 .gallery{display:grid;gap:.75rem;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.photo{margin:0}.photo img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:10px;display:block}.photo figcaption{font-size:.75rem;color:#6b6373;margin-top:.25rem}
 .slot{aspect-ratio:4/3;background:linear-gradient(135deg,#e9e1f3,#f7d9c2);border-radius:10px}
 .prices{width:100%;border-collapse:collapse}.prices td{padding:.6rem;border-bottom:1px solid #e6e0ea}
 .placeholder{color:#8a6d00;font-style:italic}
