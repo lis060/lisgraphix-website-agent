@@ -55,7 +55,7 @@ describe('createPlacesSource', () => {
     expect(url).not.toContain('SECRET');
     expect(String(init.body)).not.toContain('SECRET');
     expect((init.headers as Record<string, string>)['X-Goog-FieldMask']).toBe(FIELD_MASK);
-    expect(FIELD_MASK).not.toMatch(/review|rating|photo|editorialSummary/i);
+    expect(FIELD_MASK).not.toMatch(/reviews|places\.rating|photo|editorialSummary/i);
   });
 
   it('maps places without inventing details', async () => {

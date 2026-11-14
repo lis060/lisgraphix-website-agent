@@ -29,7 +29,7 @@ const ENDPOINT = 'https://places.googleapis.com/v1/places:searchText';
 export const FIELD_MASK = [
   'places.id', 'places.displayName', 'places.formattedAddress', 'places.businessStatus',
   'places.googleMapsUri', 'places.websiteUri', 'places.nationalPhoneNumber', 'places.internationalPhoneNumber',
-  'places.types', 'places.primaryType',
+  'places.types', 'places.primaryType', 'places.userRatingCount',
 ].join(',');
 
 const SOCIAL_HOSTS = /(^|\.)(facebook\.com|fb\.com|instagram\.com|tiktok\.com|x\.com|twitter\.com|linkedin\.com|youtube\.com|wa\.me|whatsapp\.com|linktr\.ee)$/i;
@@ -69,7 +69,7 @@ export function isSocialUrl(url: string): boolean {
 interface RawPlace {
   id?: unknown; displayName?: { text?: unknown }; formattedAddress?: unknown; businessStatus?: unknown;
   googleMapsUri?: unknown; websiteUri?: unknown; nationalPhoneNumber?: unknown; internationalPhoneNumber?: unknown;
-  types?: unknown; primaryType?: unknown;
+  types?: unknown; primaryType?: unknown; userRatingCount?: unknown;
 }
 
 function toDiscovered(place: RawPlace, q: PlacesQuery, nowIso: string): DiscoveredBusiness | null {
@@ -105,9 +105,13 @@ function toDiscovered(place: RawPlace, q: PlacesQuery, nowIso: string): Discover
   }
   const types = Array.isArray(place.types) ? place.types.filter((t): t is string => typeof t === 'string').slice(0, 30) : [];
   const primary = typeof place.primaryType === 'string' ? place.primaryType : undefined;
+  const categoryMatch = matchCategory(q.category, types, primary);
+  const ratings = typeof place.userRatingCount === 'number' && place.userRatingCount >= 0 ? Math.floor(place.userRatingCount) : 0;
+  // Scoring signals stay in memory for this run and are not stored.
+  candidate.signals = { ratingCount: ratings, categoryMatch };
   return {
     candidate,
-    categoryMatch: matchCategory(q.category, types, primary),
+    categoryMatch,
     listingFacts: {
       listingWebsiteUrl: candidate.websiteUrl, listingChecked: true,
       searchChecked: false, searchDomains: [],
