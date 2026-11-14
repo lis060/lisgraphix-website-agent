@@ -29,7 +29,7 @@ Backend core for the Lisgraphix prospecting workflow: business validation, dupli
 
 ```bash
 npm install
-npm test            # 132 tests
+npm test            # 133 tests
 npm run typecheck
 npm run run -- path/to/businesses.json
 ```
