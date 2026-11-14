@@ -15,6 +15,8 @@ import type { LibraryImage } from './library';
 
 export interface GeneratedFile {
   bytes: Uint8Array;
+  /** File type of the bytes. Defaults to png. */
+  ext?: 'png' | 'jpg';
 }
 
 export interface ImageGenerator {
@@ -101,7 +103,7 @@ export async function generateImages(opts: {
     const prompt = buildPrompt(opts.template, i);
     try {
       const out = await opts.generator.generate(prompt);
-      const file = `${opts.template}/${hash(prompt)}.png`;
+      const file = `${opts.template}/${hash(prompt)}.${out.ext ?? 'png'}`;
       await opts.save(file, out.bytes);
       opts.budget.remaining -= 1;
       images.push({

@@ -100,3 +100,45 @@ describe('openai generator', () => {
     await expect(createOpenAIGenerator({ apiKey: 'k', model: 'm', fetchImpl: fake }).generate('p')).rejects.toThrow(/401/);
   });
 });
+
+import { createCloudflareGenerator } from '../src/images/cloudflare-generator';
+import { generatorFromEnv } from '../src/images/from-env';
+
+describe('cloudflare generator', () => {
+  const ID = 'a'.repeat(32);
+  const jpeg = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]).toString('base64');
+
+  it('sends the token only to the Cloudflare account endpoint and returns a jpg', async () => {
+    let url = '';
+    let auth = '';
+    const fake = (async (u: string, init: { headers: Record<string, string> }) => {
+      url = u;
+      auth = init.headers.Authorization ?? '';
+      return { ok: true, status: 200, json: async () => ({ success: true, result: { image: jpeg } }) };
+    }) as unknown as typeof fetch;
+    const out = await createCloudflareGenerator({ accountId: ID, apiToken: 'tok', fetchImpl: fake }).generate('p');
+    expect(out.ext).toBe('jpg');
+    expect(url).toBe(`https://api.cloudflare.com/client/v4/accounts/${ID}/ai/run/@cf/black-forest-labs/flux-1-schnell`);
+    expect(auth).toBe('Bearer tok');
+  });
+
+  it('rejects a malformed account id (no URL injection)', () => {
+    expect(() => createCloudflareGenerator({ accountId: '../evil', apiToken: 't' })).toThrow(/32-character/);
+  });
+
+  it('throws without leaking the token on errors or non-image data', async () => {
+    const bad = (async () => ({ ok: false, status: 429, json: async () => ({}) })) as unknown as typeof fetch;
+    await expect(createCloudflareGenerator({ accountId: ID, apiToken: 'secret-token', fetchImpl: bad }).generate('p')).rejects.toThrow(/429/);
+    const junk = (async () => ({ ok: true, status: 200, json: async () => ({ success: true, result: { image: Buffer.from('hello').toString('base64') } }) })) as unknown as typeof fetch;
+    const err = await createCloudflareGenerator({ accountId: ID, apiToken: 'secret-token', fetchImpl: junk }).generate('p').catch((e: Error) => e);
+    expect((err as Error).message).toMatch(/not an image/);
+    expect((err as Error).message).not.toContain('secret-token');
+  });
+
+  it('picks Cloudflare first, OpenAI second, nothing otherwise', () => {
+    expect(generatorFromEnv({})).toBeUndefined();
+    expect(generatorFromEnv({ IMAGE_API_KEY: 'k' })).toBeDefined();
+    expect(generatorFromEnv({ CLOUDFLARE_ACCOUNT_ID: ID, CLOUDFLARE_API_TOKEN: 't' })).toBeDefined();
+    expect(() => generatorFromEnv({ CLOUDFLARE_ACCOUNT_ID: 'bad', CLOUDFLARE_API_TOKEN: 't' })).toThrow();
+  });
+});
