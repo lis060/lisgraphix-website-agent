@@ -27,6 +27,9 @@ export interface AutomationSettings {
   imagesPerSite: number;
   /** Hard daily cap on generated images, to control cost. */
   maxGeneratedImagesPerDay: number;
+  /** Hard daily cap on Google Places searches. 10 a day is about 300 a month,
+   *  inside the 1,000 free monthly calls of the SKU this adapter uses. */
+  maxPlacesCallsPerDay: number;
 }
 
 export const DEFAULT_SETTINGS: AutomationSettings = {
@@ -51,6 +54,7 @@ export const DEFAULT_SETTINGS: AutomationSettings = {
   imageSource: 'generated',
   imagesPerSite: 4,
   maxGeneratedImagesPerDay: 8,
+  maxPlacesCallsPerDay: 10,
 };
 
 export function websiteFitFor(settings: AutomationSettings, category: string): number {
