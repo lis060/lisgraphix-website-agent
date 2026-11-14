@@ -10,6 +10,8 @@ export interface Lead {
   contact: string; discovered: string; demo: 'None' | 'Ready' | 'Failed' | 'Archived'; stage: Stage;
   /** Only set for a deployment that is ready and whose URL was checked. */
   demoUrl?: string;
+  /** Link built from Google's place ID, for leads found through Google. */
+  mapsUrl?: string;
 }
 export interface SettingsView {
   cities: string[]; categories: string[]; dailyDiscoveryLimit: number | string; shortlist: number | string;

@@ -31,6 +31,8 @@ export interface Evidence {
 export interface BusinessCandidate {
   /** Stable id from the source, e.g. a Google place id. */
   externalId?: string;
+  /** Where the record came from. Google records follow the place-ID-only storage rule. */
+  source?: 'manual' | 'google_places';
   name: string;
   category: string;
   city: string;

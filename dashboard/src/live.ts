@@ -4,7 +4,7 @@ import { SETTINGS, type Lead, type SettingsView, type Stage } from './data';
 import { mapLead, mapSettings, type BusinessRow } from './mapLead';
 
 const LEAD_SELECT =
-  'id,name,category,city,phone,email,discovered_at,client_status,' +
+  'id,name,source,external_id,category,city,phone,email,discovered_at,client_status,' +
   'website_verifications(status,confidence,verified_at),' +
   'lead_scores(total,scored_at),' +
   'generated_demos(status,created_at,deployments(status,deployment_url,url_reachable,created_at))';

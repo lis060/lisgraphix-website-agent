@@ -37,7 +37,7 @@ function Leads({ leads }: { leads: Lead[] }) {
       <div className="scroll"><table>
         <thead><tr>{['Business','Category','City','Website status','Confidence','Score','Contact','Found','Demo','Stage'].map((h) => <th key={h}>{h}</th>)}</tr></thead>
         <tbody>{rows.map((l) => (
-          <tr key={l.id}><td>{l.name}</td><td>{l.category}</td><td>{l.city}</td><td>{l.websiteStatus}</td>
+          <tr key={l.id}><td>{l.mapsUrl ? <a className="link" href={l.mapsUrl} target="_blank" rel="noopener noreferrer">Open in Google Maps</a> : l.name}</td><td>{l.category}</td><td>{l.city}</td><td>{l.websiteStatus}</td>
             <td>{dash(l.confidence, '%')}</td><td><b>{dash(l.score)}</b>{l.score !== null && '/100'}</td>
             <td>{l.contact}</td><td>{l.discovered}</td><td>{l.demo}</td><td>{l.stage}</td></tr>
         ))}</tbody>
@@ -73,7 +73,7 @@ function Pipeline({ leads, onMove }: { leads: Lead[]; onMove?: (id: Lead['id'], 
       <div className="board">{STAGES.map((s) => (
         <div className="col" key={s}><h4>{s}</h4>
           {leads.filter((l) => l.stage === s).map((l) => (
-            <div className="card mini" key={l.id}>{l.name}<span className="muted"> · {l.city}</span>
+            <div className="card mini" key={l.id}>{l.mapsUrl ? `${l.category} (Google listing)` : l.name}<span className="muted"> · {l.city}</span>
               {onMove && (
                 <select aria-label={`Move ${l.name} to stage`} value={l.stage}
                   onChange={async (e) => setMsg(await onMove(l.id, e.target.value as Stage))}>
