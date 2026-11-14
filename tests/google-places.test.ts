@@ -140,7 +140,7 @@ describe('reachability', () => {
 describe('interleave', () => {
   const d = (id: string, name = id) => ({
     candidate: { externalId: id, name, category: 'c', city: 'Accra', socialUrls: [], sourceUrls: [], operational: null, discoveredAt: NOW },
-    listingFacts: {} as never,
+    listingFacts: {} as never, categoryMatch: 'unknown' as const,
   });
   it('takes one from each search in turn and drops repeats', async () => {
     const { interleave } = await import('../src/discovery/google-places');

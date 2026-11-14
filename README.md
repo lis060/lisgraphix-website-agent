@@ -19,6 +19,7 @@ Backend core for the Lisgraphix prospecting workflow: business validation, dupli
 - **Daily report** (`src/reports/daily-report.ts`): builds the report from a run, with a plain-text version for email and a CSV export. Preview links appear only for deployments verified as reachable. CSV cells are quoted and spreadsheet formulas are neutralised.
 - **Outreach drafts** (`src/outreach/draft.ts`): writes a friendly draft per lead for you to review. It never sends anything, and a draft is only marked ready once it holds a verified preview link.
 - **Google Places discovery** (`src/discovery/google-places.ts`): Text Search adapter with a cost-limited field mask, a daily call cap (default 10), retries with backoff, and social links kept separate from websites. `npm run discover` does a live test run that prints a report and writes nothing. Not verified against the live API until a key is added.
+- **Category check** (`src/discovery/category-match.ts`): compares Google's own type labels with the category searched and drops clear mismatches, such as a phone shop returned for a furniture search. Vague or missing labels are kept as unknown. The labels are used in memory only.
 - **Website reachability check** (`src/verification/reachability.ts`): checks that a public web address answers, and refuses private or local addresses.
 - **Saving runs** (`src/storage/save-run.ts`): `npm run discover -- --save` stores a run in Supabase. Businesses found through Google are stored by place ID only, with the category and city searched, our website status, score and reasons. Google's name, address, phone, website and links are never written, and a database constraint refuses them. Only one run can be in progress; a crashed run is closed after two hours. Needs `DATABASE_URL`. Not verified against the live database.
 - **Web search check** (`src/verification/web-search.ts`, `search-providers.ts`): searches for each business that has no website on its listing, ignores directories and social pages, and looks for a site of its own. A domain matching the business name counts as its website; a weaker match goes to manual review. With the listing check and this one both clean, a lead reaches "no official website identified" at 75% confidence and can be prioritized. Capped at 25 searches a day. Works with Brave or Serper; neither adapter has run against the live service.
@@ -29,7 +30,7 @@ Backend core for the Lisgraphix prospecting workflow: business validation, dupli
 
 ```bash
 npm install
-npm test            # 133 tests
+npm test            # 139 tests
 npm run typecheck
 npm run run -- path/to/businesses.json
 ```

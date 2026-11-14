@@ -10,7 +10,7 @@
  * only, with our own status and score.
  */
 import { DEFAULT_SETTINGS } from './config/config';
-import { buildQueries, createPlacesSource, interleave, type DiscoveredBusiness } from './discovery/google-places';
+import { buildQueries, createPlacesSource, dropCategoryMismatches, interleave, type DiscoveredBusiness } from './discovery/google-places';
 import { buildDailyReport, renderReportText } from './reports/daily-report';
 import { checkReachable } from './verification/reachability';
 import { providerFromEnv } from './verification/search-providers';
@@ -51,10 +51,13 @@ async function main(): Promise<void> {
   }
 
   const groups: DiscoveredBusiness[][] = [];
+  let wrongCategory = 0;
   const failures: string[] = [];
   for (const q of buildQueries(settings, Math.floor(now.getTime() / 86_400_000))) {
     try {
-      groups.push(await source.search(q));
+      const { kept, dropped } = dropCategoryMismatches(await source.search(q));
+      wrongCategory += dropped;
+      groups.push(kept);
     } catch (err) {
       failures.push(err instanceof Error ? err.message : String(err));
     }
@@ -82,7 +85,8 @@ async function main(): Promise<void> {
   });
 
   console.log(renderReportText(buildDailyReport(run)));
-  console.log(`\nGoogle Places calls used: ${source.callsMade()} of ${settings.maxPlacesCallsPerDay}`);
+  console.log(`\nSkipped as the wrong kind of business: ${wrongCategory}`);
+  console.log(`Google Places calls used: ${source.callsMade()} of ${settings.maxPlacesCallsPerDay}`);
   if (failures.length) console.log(`Search failures:\n- ${failures.join('\n- ')}`);
   if (db && executionId) {
     const result = await saveRun(db, executionId, run, {

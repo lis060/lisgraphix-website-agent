@@ -1,5 +1,6 @@
 import type { AutomationSettings } from '../config/config';
 import type { BusinessCandidate, Evidence, VerificationInput } from '../domain/types';
+import { matchCategory, type CategoryMatch } from './category-match';
 import { validateCandidates } from './manual-import';
 
 /**
@@ -8,7 +9,8 @@ import { validateCandidates } from './manual-import';
  *
  * Cost control:
  * - The field mask below includes phone numbers and website, which bills each
- *   search at the "Text Search Enterprise" rate. No review, rating or photo
+ *   search at the "Text Search Enterprise" rate. The type fields used for the
+ *   category check belong to a lower-priced group, so they add no cost. No review, rating or photo
  *   fields are requested, which would cost more.
  * - A daily call budget caps usage. Retries count against it.
  *
@@ -27,6 +29,7 @@ const ENDPOINT = 'https://places.googleapis.com/v1/places:searchText';
 export const FIELD_MASK = [
   'places.id', 'places.displayName', 'places.formattedAddress', 'places.businessStatus',
   'places.googleMapsUri', 'places.websiteUri', 'places.nationalPhoneNumber', 'places.internationalPhoneNumber',
+  'places.types', 'places.primaryType',
 ].join(',');
 
 const SOCIAL_HOSTS = /(^|\.)(facebook\.com|fb\.com|instagram\.com|tiktok\.com|x\.com|twitter\.com|linkedin\.com|youtube\.com|wa\.me|whatsapp\.com|linktr\.ee)$/i;
@@ -37,6 +40,8 @@ export interface DiscoveredBusiness {
   candidate: BusinessCandidate;
   /** What the listing itself tells us. One check only, so never conclusive alone. */
   listingFacts: VerificationInput;
+  /** Whether Google's own type labels agree with the category we searched for. */
+  categoryMatch: CategoryMatch;
 }
 
 /**
@@ -64,6 +69,7 @@ export function isSocialUrl(url: string): boolean {
 interface RawPlace {
   id?: unknown; displayName?: { text?: unknown }; formattedAddress?: unknown; businessStatus?: unknown;
   googleMapsUri?: unknown; websiteUri?: unknown; nationalPhoneNumber?: unknown; internationalPhoneNumber?: unknown;
+  types?: unknown; primaryType?: unknown;
 }
 
 function toDiscovered(place: RawPlace, q: PlacesQuery, nowIso: string): DiscoveredBusiness | null {
@@ -97,8 +103,11 @@ function toDiscovered(place: RawPlace, q: PlacesQuery, nowIso: string): Discover
   } else {
     evidence.push({ kind: 'listing_website', detail: 'Google listing shows no website.', sourceUrl: candidate.mapsUrl, observedAt: nowIso });
   }
+  const types = Array.isArray(place.types) ? place.types.filter((t): t is string => typeof t === 'string').slice(0, 30) : [];
+  const primary = typeof place.primaryType === 'string' ? place.primaryType : undefined;
   return {
     candidate,
+    categoryMatch: matchCategory(q.category, types, primary),
     listingFacts: {
       listingWebsiteUrl: candidate.websiteUrl, listingChecked: true,
       searchChecked: false, searchDomains: [],
@@ -179,4 +188,10 @@ export function interleave(groups: DiscoveredBusiness[][]): DiscoveredBusiness[]
     }
   }
   return out;
+}
+
+/** Drops results whose Google type clearly belongs to a different kind of business. */
+export function dropCategoryMismatches(list: DiscoveredBusiness[]): { kept: DiscoveredBusiness[]; dropped: number } {
+  const kept = list.filter((d) => d.categoryMatch !== 'mismatch');
+  return { kept, dropped: list.length - kept.length };
 }
