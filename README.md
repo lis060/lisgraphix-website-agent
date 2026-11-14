@@ -24,13 +24,14 @@ Backend core for the Lisgraphix prospecting workflow: business validation, dupli
 - **Saving runs** (`src/storage/save-run.ts`): `npm run discover -- --save` stores a run in Supabase. Businesses found through Google are stored by place ID only, with the category and city searched, our website status, score and reasons. Google's name, address, phone, website and links are never written, and a database constraint refuses them. Only one run can be in progress; a crashed run is closed after two hours. Needs `DATABASE_URL`. Not verified against the live database.
 - **Web search check** (`src/verification/web-search.ts`, `search-providers.ts`): searches for each business that has no website on its listing, ignores directories and social pages, and looks for a site of its own. A domain matching the business name counts as its website; a weaker match goes to manual review. With the listing check and this one both clean, a lead reaches "no official website identified" at 75% confidence and can be prioritized. Capped at 25 searches a day. Works with Brave or Serper; neither adapter has run against the live service.
 - **Demo builder** (`src/demo/build.ts`): builds one demo page and runs ten checks before it may be published: unofficial notice, hidden from search engines, no scripts, no outside files, safe links only, one main heading, mobile ready, images described, no invented reviews, small page size. `npm run demo:samples` writes one sample per template to `demo-output/` using fictional businesses.
+- **Business names in the dashboard** (`supabase/functions/place-details/`): a Supabase Edge Function that fetches a Google lead's name fresh by place ID when the dashboard opens. Only signed-in, allowlisted users can call it, it accepts our own business ids only, and it stores nothing. Daily caps: 300 name lookups and 30 full lookups (address and phone), counted in `api_usage_daily`. Deployed to the live project. The signed-in path has not been tested, because that needs the owner's password and the Google secret.
 - **Settings** (`src/config/config.ts`): defaults from the spec (Accra, Tema, Kumasi; 20 discoveries; 5 shortlisted; 2 demos; 9:30 AM Africa/Accra as cron `30 9 * * *`).
 
 ## Run it
 
 ```bash
 npm install
-npm test            # 142 tests
+npm test            # 150 tests
 npm run typecheck
 npm run run -- path/to/businesses.json
 ```
@@ -42,7 +43,7 @@ The CLI makes no network calls. Without verification facts, every lead is classi
 These need your authorization or accounts, and none were created:
 
 - **Google Places key.** Set `GOOGLE_PLACES_API_KEY` (Places API (New) enabled, billing on). With phone and website fields, searches bill at the Text Search Enterprise rate, which Google lists with 1,000 free calls a month.
-- **Fresh Google details in the dashboard.** Google leads show as an "Open in Google Maps" link built from the place ID. Showing the name and phone inside the dashboard needs a small server function that fetches them fresh from Google each time. Not built.
+- **Google key for the names function.** The `place-details` function is deployed but returns "not configured" until `GOOGLE_PLACES_API_KEY` is added as a secret in the Supabase project (Edge Functions, then Secrets). Until then, Google leads show as an "Open in Google Maps" link.
 - **Web search key.** The second website check is built but needs a key for one search service: `BRAVE_SEARCH_API_KEY` or `SERPER_API_KEY`. Until one is set, no lead can be prioritized.
 - **Database connection.** The schema is written but no Supabase project is connected or migrated.
 - **React/Vite demo app and Vercel deployment.** The current templates render static HTML. A React/Vite version and deployment still need building. Vercel paid hosting is not authorized.
