@@ -39,6 +39,12 @@ function imagesPerDemo(argv: string[]): number {
   return Number.isInteger(n) && n > 0 && n <= 4 ? n : 1;
 }
 
+try {
+  process.loadEnvFile('.env');
+} catch {
+  /* no .env file: rely on the real environment */
+}
+
 mkdirSync('demo-output', { recursive: true });
 const perDemo = imagesPerDemo(process.argv.slice(2));
 const generator = perDemo > 0 ? generatorFromEnv(process.env) : undefined;
